@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobQuest AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <script>
+        // Configura o worker da biblioteca para rodar localmente sem travar
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: "#0A0512",
+                            dark: "#120A24",
+                            purple: "#9D4EDD",
+                            lightPurple: "#C77DFF",
+                            blue: "#3A0CA3",
+                            neonCyan: "#4CC9F0",
+                            neonPink: "#F72585"
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0A0512; color: #F8F9FA; font-family: 'Inter', sans-serif; }
+        .glass-panel { background: rgba(20, 12, 38, 0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(157, 78, 221, 0.2); }
+        .text-gradient { background: linear-gradient(135deg, #C77DFF 0%, #9D4EDD 50%, #4CC9F0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row">
+
+    <aside class="w-full lg:w-80 flex flex-col border-b lg:border-b-0 lg:border-r border-cyber-purple/20 bg-cyber-dark/80 p-6 shrink-0">
+        <div class="mb-6">
+            <h1 class="text-2xl font-black font-mono tracking-wider text-white">JOBQUEST <span class="text-cyber-purple">AI</span></h1>
+            <p class="text-xs text-gray-400">v1.7.0 // Engine Cross-Language</p>
+        </div>
+        
+        <nav class="space-y-2 mb-6">
+            <button onclick="switchTab('new')" id="btn-new" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border font-mono text-xs bg-cyber-purple text-white border-cyber-lightPurple">⚡ Nova Varredura</button>
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border font-mono text-xs border-white/5 text-gray-400 hover:bg-white/5">📊 Status do Perfil</button>
+            <button onclick="switchTab('roadmap')" id="btn-roadmap" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border font-mono text-xs border-white/5 text-gray-400 hover:bg-white/5">📅 Rota 7 Dias</button>
+        </nav>
+
+        <div class="glass-panel p-4 rounded-xl mb-4">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-xs text-purple-300 font-mono">RANK: <span id="txt-rank" class="text-cyber-neonCyan font-bold">Novato</span></span>
+                <span id="txt-level" class="text-xs text-gray-400 font-mono">Nível 1</span>
+            </div>
+            <div class="w-full bg-cyber-dark rounded-full h-3 p-0.5 overflow-hidden border border-white/10">
+                <div id="bar-xp" class="bg-gradient-to-r from-cyber-purple to-cyber-neonCyan h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between items-center mt-1 text-[10px] text-gray-500 font-mono">
+                <span id="txt-xp">0/100 XP</span>
+                <span>Próximo Rank</span>
+            </div>
+        </div>
+
+        <div class="glass-panel p-4 rounded-xl hidden lg:block">
+            <h3 class="text-xs font-bold text-purple-300 mb-3 font-mono uppercase tracking-wider">CONQUISTAS</h3>
+            <div class="space-y-2 text-xs font-mono">
+                <div id="badge-1" class="p-2 rounded border bg-black/20 border-white/5 opacity-40 flex items-center gap-2"><span>⚡</span> Primeiro Contato</div>
+                <div id="badge-2" class="p-2 rounded border bg-black/20 border-white/5 opacity-40 flex items-center gap-2"><span>🎯</span> Elite da Vaga</div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+        <header class="mb-8 border-b border-white/5 pb-4">
+            <h2 class="text-xl md:text-2xl font-black font-mono text-white">"Transforme vagas em quests. Otimize sua build."</h2>
+            <p class="text-xs text-gray-400 font-mono mt-1">Insira a vaga e faça o upload do seu currículo em PDF para atualizar seu perfil técnico.</p>
+        </header>
+
+        <section id="sec-new" class="block space-y-6 max-w-4xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="flex flex-col">
+                    <label class="text-xs font-mono uppercase text-purple-300 mb-2">📜 Requisitos da Vaga</label>
+                    <textarea id="input-job" placeholder="Cole aqui a descrição da vaga ou as tecnologias solicitadas..." class="w-full h-64 p-4 rounded-xl bg-black/40 border border-cyber-purple/30 focus:border-cyber-neonCyan focus:outline-none text-sm text-gray-200 resize-none"></textarea>
+                </div>
+                
+                <div class="flex flex-col justify-between space-y-4">
+                    <div class="flex flex-col h-full">
+                        <label class="text-xs font-mono uppercase text-purple-300 mb-2">🛡️ Upload do seu Currículo (PDF)</label>
+                        <div class="border-2 border-dashed border-cyber-purple/40 hover:border-cyber-neonCyan rounded-xl p-6 flex flex-col items-center justify-center bg-black/20 h-full min-h-[220px] transition-colors relative cursor-pointer">
+                            <input type="file" id="pdf-file-input" accept=".pdf" onchange="extractTextFromPDF(event)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                            <span id="pdf-icon" class="text-4xl mb-2">📁</span>
+                            <p id="pdf-status-text" class="text-xs font-mono text-center text-gray-400 px-2">
+                                Clique ou arraste para subir seu Currículo em PDF
+                            </p>
+                        </div>
+                    </div>
+                    <textarea id="input-resume" class="hidden"></textarea>
+                </div>
+            </div>
+            
+            <div class="text-center pt-4">
+                <button onclick="processAnalysis()" id="btn-submit-analysis" class="px-8 py-4 bg-gradient-to-r from-cyber-blue via-cyber-purple to-cyber-neonPink text-white font-mono uppercase tracking-widest text-sm font-bold rounded-xl hover:scale-105 transition-all duration-300">
+                    ⚔️ Analisar e Evoluir Perfil
+                </button>
+            </div>
+        </section>
+
+        <section id="sec-dashboard" class="hidden space-y-6 max-w-4xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-panel p-6 rounded-2xl text-center flex flex-col justify-center items-center border border-cyber-purple/40">
+                    <h3 class="text-xs font-mono text-gray-400 uppercase mb-2">MATCH SCORE</h3>
+                    <span id="dash-score" class="text-5xl font-black font-mono text-gradient">0%</span>
+                </div>
+                <div class="glass-panel p-6 rounded-2xl md:col-span-2 border border-cyber-purple/40">
+                    <span class="text-[10px] font-mono bg-cyber-purple/20 text-cyber-lightPurple px-2 py-1 rounded">ANÁLISE DE COMBATE</span>
+                    <h2 class="text-lg font-bold text-white font-mono mt-2">Status da Triagem de RH</h2>
+                    <p id="dash-verdict" class="text-xs text-gray-300 mt-1">Insira os dados para calibrar os sensores.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-panel p-5 rounded-2xl">
+                    <h3 class="text-xs font-mono text-cyber-neonCyan uppercase mb-3">✓ Buffs Ativos (Habilidades mapeadas encontradas)</h3>
+                    <div id="container-skills-found" class="flex flex-wrap gap-2"></div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <h3 class="text-xs font-mono text-cyber-neonPink uppercase mb-3">✕ Vulnerabilidades (Habilidades Faltantes)</h3>
+                    <div id="container-skills-missing" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="sec-roadmap" class="hidden max-w-2xl mx-auto space-y-3">
+            <h3 class="text-sm font-mono text-purple-300 uppercase tracking-widest mb-2">📅 Rota Tática de Treinamento</h3>
+            <div id="container-roadmap" class="space-y-3"></div>
+        </section>
+    </main>
+
+    <script>
+        // Dicionário Inteligente Cross-Language (Mapeia variações PT e EN para o mesmo ID técnico)
+        const techDatabase = [
+            { id: 'python', terms: ['python'] },
+            { id: 'sql', terms: ['sql', 'banco de dados', 'bancos de dados', 'database', 'databases'] },
+            { id: 'nosql', terms: ['nosql', 'mongodb', 'cassandra', 'dynamodb'] },
+            { id: 'spark', terms: ['spark', 'pyspark', 'apache spark'] },
+            { id: 'databricks', terms: ['databricks'] },
+            { id: 'airflow', terms: ['airflow', 'apache airflow'] },
+            { id: 'dbt', terms: ['dbt', 'data build tool'] },
+            { id: 'aws', terms: ['aws', 'amazon web services'] },
+            { id: 'azure', terms: ['azure', 'microsoft azure'] },
+            { id: 'gcp', terms: ['gcp', 'google cloud', 'google cloud platform'] },
+            { id: 'snowflake', terms: ['snowflake'] },
+            { id: 'bigquery', terms: ['bigquery'] },
+            { id: 'redshift', terms: ['redshift'] },
+            { id: 'docker', terms: ['docker', 'conteiner', 'containers'] },
+            { id: 'kubernetes', terms: ['kubernetes', 'k8s'] },
+            { id: 'git', terms: ['git', 'github', 'gitlab'] },
+            { id: 'machine learning', terms: ['machine learning', 'aprendizado de máquina', 'ml', 'ia', 'ai', 'artificial intelligence', 'inteligência artificial'] },
+            { id: 'data engineering', terms: ['data engineering', 'engenharia de dados', 'pipeline de dados', 'data pipelines', 'etl', 'elt'] },
+            { id: 'javascript', terms: ['javascript', 'js', 'typescript', 'ts'] },
+            { id: 'java', terms: ['java'] },
+            { id: 'scala', terms: ['scala'] },
+            { id: 'go', terms: ['go', 'golang'] },
+            { id: 'devops', terms: ['devops', 'ci/cd', 'jenkins'] },
+            { id: 'scrum', terms: ['scrum', 'agile', 'metodologias ágeis', 'kanban'] },
+            { id: 'excel', terms: ['excel', 'planilhas'] },
+            { id: 'power bi', terms: ['power bi', 'powerbi', 'tableau', 'looker', 'bi'] },
+            { id: 'comunicação', terms: ['comunicação', 'communication', 'soft skills', 'proativo'] }
+        ];
+
+        // Alternador de Abas usando block/hidden do Tailwind
+        function switchTab(tabName) {
+            ['sec-new', 'sec-dashboard', 'sec-roadmap'].forEach(id => {
+                const element = document.getElementById(id);
+                element.classList.add('hidden');
+                element.classList.remove('block');
+            });
+            
+            const activeSection = document.getElementById('sec-' + tabName);
+            activeSection.classList.remove('hidden');
+            activeSection.classList.add('block');
+
+            ['btn-new', 'btn-dashboard', 'btn-roadmap'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.className = "w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border font-mono text-xs border-white/5 text-gray-400 hover:bg-white/5";
+            });
+            document.getElementById('btn-' + tabName).className = "w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border font-mono text-xs bg-cyber-purple text-white border-cyber-lightPurple";
+        }
+
+        // Extrator de texto do PDF (Sem travar o navegador)
+        async function extractTextFromPDF(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.type !== "application/pdf") {
+                alert("Por favor, selecione um arquivo válido no formato PDF.");
+                return;
+            }
+
+            const statusText = document.getElementById('pdf-status-text');
+            const icon = document.getElementById('pdf-icon');
+            
+            statusText.innerText = "⚡ Decodificando Atributos do PDF...";
+            statusText.className = "text-xs font-mono text-center text-cyber-neonCyan animate-pulse";
+            icon.innerText = "🔮";
+
+            try {
+                const fileReader = new FileReader();
+                fileReader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let extractedText = "";
+
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(" ");
+                        extractedText += pageText + " ";
+                    }
+
+                    document.getElementById('input-resume').value = extractedText;
+                    statusText.innerText = `Sucesso: ${file.name} sincronizado!`;
+                    statusText.className = "text-xs font-mono text-center text-green-400 font-bold";
+                    icon.innerText = "🛡️";
+                };
+                fileReader.readAsArrayBuffer(file);
+            } catch (error) {
+                console.error(error);
+                statusText.innerText = "Erro ao ler PDF local.";
+                statusText.className = "text-xs font-mono text-center text-cyber-neonPink";
+                icon.innerText = "✕";
+            }
+        }
+
+        // Processador de análise com normalização PT-EN e Regex
+        function processAnalysis() {
+            const jobText = document.getElementById('input-job').value.toLowerCase();
+            const resumeText = document.getElementById('input-resume').value.toLowerCase();
+
+            if (!jobText) {
+                alert("Por favor, cole as informações da vaga na caixa esquerda!");
+                return;
+            }
+            if (!resumeText) {
+                alert("Por favor, faça o upload do seu currículo em PDF primeiro!");
+                return;
+            }
+
+            // Descobre quais categorias técnicas a vaga está pedindo
+            const requiredCategories = techDatabase.filter(tech => {
+                return tech.terms.some(term => {
+                    const escapedTerm = term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    const regex = new RegExp('\\b' + escapedTerm + '\\b', 'i');
+                    return regex.test(jobText);
+                });
+            });
+
+            // Dessas categorias da vaga, quais existem no currículo (em qualquer idioma cadastrado)
+            const matchingCategories = requiredCategories.filter(tech => {
+                return tech.terms.some(term => {
+                    const escapedTerm = term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    const regex = new RegExp('\\b' + escapedTerm + '\\b', 'i');
+                    return regex.test(resumeText);
+                });
+            });
+
+            // Filtra as faltantes por ID único de categoria
+            const missingCategories = requiredCategories.filter(tech => !matchingCategories.includes(tech));
+
+            // Evita divisão por zero se a vaga não mapear nada conhecido
+            const totalRequired = requiredCategories.length > 0 ? requiredCategories.length : 1;
+            const totalMatches = matchingCategories.length;
+
+            // Escala de Match Calibrada matematicamente
+            const score = Math.min(100, Math.max(12, Math.round((totalMatches / totalRequired) * 100)));
+
+            // Rankings da UI
+            let rank = "Novato";
+            if (score > 35) rank = "Aprendiz";
+            if (score > 65) rank = "Caçador de Elite";
+            if (score > 85) rank = "Boss Final";
+
+            const lvl = Math.floor((score * 10) / 100) + 1;
+            const xpPercent = (score * 10) % 100;
+
+            document.getElementById('txt-rank').innerText = rank;
+            document.getElementById('txt-level').innerText = `Nível ${lvl}`;
+            document.getElementById('bar-xp').style.width = `${xpPercent}%`;
+            document.getElementById('txt-xp').innerText = `${xpPercent}/100 XP`;
+
+            if (score > 0) {
+                document.getElementById('badge-1').className = "p-2 rounded border bg-cyber-purple/10 border-cyber-purple/40 text-white flex items-center gap-2";
+            }
+            if (score >= 70) {
+                document.getElementById('badge-2').className = "p-2 rounded border bg-cyber-purple/10 border-cyber-purple/40 text-white flex items-center gap-2";
+            }
+
+            document.getElementById('dash-score').innerText = `${score}%`;
+            document.getElementById('dash-verdict').innerText = score > 70 ? 
+                "Build altamente letal! Seus atributos batem com as palavras-chave da vaga para passar nos filtros de IA das empresas." : 
+                "Alerta de triagem automatizada detectado. Adicione as palavras-chave listadas como vulnerabilidade para evoluir seu score de Match.";
+
+            // Renderiza as tags na tela usando o ID limpo (Maiúsculo)
+            const containerFound = document.getElementById('container-skills-found');
+            containerFound.innerHTML = totalMatches > 0 ? 
+                matchingCategories.map(s => `<span class="px-2.5 py-1 bg-cyber-neonCyan/10 border border-cyber-neonCyan/40 text-cyber-neonCyan text-xs font-mono rounded font-bold">✓ ${s.id.toUpperCase()}</span>`).join('') :
+                `<span class="text-xs text-gray-500 font-mono">Nenhuma tecnologia correspondente identificada.</span>`;
+
+            const containerMissing = document.getElementById('container-skills-missing');
+            containerMissing.innerHTML = missingCategories.length > 0 ? 
+                missingCategories.map(s => `<span class="px-2.5 py-1 bg-cyber-neonPink/10 border border-cyber-neonPink/40 text-cyber-neonPink text-xs font-mono rounded">✕ ${s.id.toUpperCase()}</span>`).join('') :
+                `<span class="text-xs text-cyber-neonCyan font-mono">Nenhuma falha encontrada! Build 100% otimizada para essa vaga.</span>`;
+
+            // Cronograma dinâmico de estudo
+            const roadmapContainer = document.getElementById('container-roadmap');
+            const targetSkill = missingCategories[0] ? missingCategories[0].id.toUpperCase() : "CLEAN CODE / SYSTEM DESIGN";
+            
+            const roadmapSteps = [
+                { day: "Dia 1", task: `Mapear os termos em inglês equivalentes às exigências locais e atualizar o sumário técnico.` },
+                { day: "Dia 2", task: `Estudar a documentação teórica e arquitetura de componentes em ${targetSkill}.` },
+                { day: "Dia 3", task: "Criar ou otimizar um projeto prático no GitHub estruturado com essa tecnologia." },
+                { day: "Dia 4", task: "Ajustar descrições de experiências passadas usando métricas de impacto e dados claros." },
+                { day: "Dia 5", task: "Buscar conexões e profissionais da mesma área técnica na empresa-alvo via LinkedIn." },
+                { day: "Dia 6", task: "Executar testes e simulações de questionários técnicos de triagem com IA." },
+                { day: "Dia 7", task: "Revisar a formatação final do arquivo e aplicar para a vaga estratégica." }
+            ];
+
+            roadmapContainer.innerHTML = roadmapSteps.map(step => `
+                <div class="p-4 bg-cyber-dark/60 border border-cyber-purple/20 rounded-xl flex gap-4 text-xs font-mono">
+                    <span class="bg-cyber-purple px-2 py-0.5 rounded text-white shrink-0">${step.day}</span>
+                    <p class="text-gray-200">${step.task}</p>
+                </div>
+            `).join('');
+
+            switchTab('dashboard');
+        }
+    </script>
+</body>
+</html>
