@@ -31,7 +31,8 @@ https://github.com/GustavoHodas/jobquest-ai
 
 ## 📷 Preview
 
-(Add screenshots here later)
+<img width="1917" height="907" alt="image" src="https://github.com/user-attachments/assets/c61fa5a0-0970-40e2-9571-b1a43ce52bf5" />
+
 
 ---
 
